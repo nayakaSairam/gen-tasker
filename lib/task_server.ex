@@ -1,6 +1,13 @@
 alias TaskItem
+
 defmodule TaskServer do
   use GenServer
+  @save_file "tasks.bin"
+
+  defp persist(state) do
+    binary=:erlang.term_to_binary(state)
+    File.write!(@save_file,binary)
+  end
 
   #Client API
   def start_link(_opts) do
@@ -41,15 +48,23 @@ def reset_all do
 end
 
   #Server Callbacks
-  def init(state) do
-    IO.puts("TaskServer started!")
+
+
+  def init(_args) do
+    state =
+      case File.read(@save_file) do
+        {:ok,binary}-> :erlang.binary_to_term(binary)
+        _->%{}
+      end
+    IO.puts("TaskServer is online with loaded tasks.")
     {:ok,state}
   end
 
   def handle_call({:add_task, task_description},_from,state) do
     task_id = map_size(state) + 1
-    task= %TaskItem{desc: task_description}
-    new_state = Map.put(state, task_id, task)
+    new_task= %TaskItem{desc: task_description}
+    new_state = Map.put(state, task_id, new_task)
+    persist(new_state)
     {:reply, {:ok, task_id}, new_state}
   end
 
@@ -65,6 +80,7 @@ end
       task ->
         updated_task= %{task | done: true}
         new_state = Map.put(state, task_id, updated_task)
+        persist(new_state)
         {:reply,{:ok,task_id}, new_state}
     end
   end
@@ -73,6 +89,7 @@ end
     case Map.has_key?(state,task_id) do
       true->
         new_state=Map.delete(state,task_id)
+        persist(new_state)
         {:reply,:ok,new_state};
       false->
         {:reply,{:error,:not_found},state}
@@ -96,13 +113,15 @@ end
     %TaskItem{}= task->
       updated_task=%TaskItem{task | desc: new_desc}
       new_state=Map.put(state,task_id,updated_task)
+      persist(new_state)
       {:reply, {:ok,task_id},new_state}
     end
   end
 
   def handle_call(:reset_all, _from, _state) do
-  {:reply, :ok, %{}}
-end
-
-
+    new_state=%{}
+    persist(new_state)
+    {:reply, :ok, new_state}
+  end
+  
 end
