@@ -1,1 +1,8 @@
-"/_build/\n/deps/\nerl_crash.dump\n*.beam\n*.swp\n*.swo" 
+/_build/
+/deps/
+erl_crash.dump
+*.beam
+*.swp
+*.swo
+*.bak
+tasks.bin
