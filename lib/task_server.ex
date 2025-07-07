@@ -47,8 +47,15 @@ def archieve_completed do
   GenServer.call(__MODULE__, :archive_completed)
 end
 
+def unarchive_task(id) do
+  GenServer.call(__MODULE__, {:unarchive_task,id})
+end
 def get_archived do
   GenServer.call(__MODULE__, :get_archived)
+end
+
+def show_all_tasks do
+  GenServer.call(__MODULE__, :show_all_tasks)
 end
 
 def reset_all do
@@ -56,7 +63,6 @@ def reset_all do
 end
 
   #Server Callbacks
-
 
   def init(_args) do
     state =
@@ -68,13 +74,13 @@ end
     {:ok,state}
   end
 
-  def handle_call({:add_task, task_description},_from,%{active: active, archived: archived} = _state) do
-    task_id = map_size(active) + 1
-    new_task= %TaskItem{desc: task_description}
-    new_state = %{active: Map.put(active, task_id, new_task),archived: archived}
-    persist(new_state)
-    {:reply, {:ok, task_id}, new_state}
-  end
+  def handle_call({:add_task, desc}, _from, %{active: active, archived: _archived} = state) do
+  new_id = map_size(active) + 1
+  new_task = %TaskItem{desc: desc, done: false}
+  new_active = Map.put(active, new_id, new_task)
+  new_state = %{state | active: new_active}
+  {:reply, {:ok, new_id}, new_state}
+end
 
   def handle_call(:get_tasks, _from, %{active: active} = state) do
   {:reply, active, state}
@@ -140,6 +146,26 @@ end
   def handle_call(:get_archived, _from, state) do
   {:reply, state.archived, state}
   end
+
+  def handle_call({:unarchive_task, id}, _from, %{active: active, archived: archived} = state) do
+  case Map.pop(archived, id) do
+    {nil, _} ->
+      {:reply, {:error, "Task not found in archive"}, state}
+
+    {task_to_restore, remaining_archived} ->
+      new_active = Map.put(active, id, task_to_restore)
+      new_state = %{active: new_active, archived: remaining_archived}
+      persist(new_state)
+      {:reply, :ok, new_state}
+    end
+  end
+
+
+  def handle_call(:show_all_tasks, _from, %{active: active, archived: archived} = state) do
+  all_tasks = Map.to_list(active) ++ Map.to_list(archived)
+  {:reply, all_tasks, state}
+  end
+
 
   def handle_call(:reset_all, _from, _state) do
     new_state=%{active: %{},archived: %{}}

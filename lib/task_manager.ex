@@ -19,7 +19,11 @@ defmodule TaskManager do
   def archive_completed, do: TaskServer.archieve_completed()
 
   def get_archived, do: TaskServer.get_archived()
-  
+
+  def unarchive_task(id), do: TaskServer.unarchive_task(id)
+
+  def show_all_tasks, do: TaskServer.show_all_tasks()
+
   def reset_all,do: TaskServer.reset_all()
 
 end
