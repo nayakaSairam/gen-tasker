@@ -16,5 +16,10 @@ defmodule TaskManager do
 
   def edit_task(task_id,new_description),do: TaskServer.edit_task(task_id, new_description)
 
+  def archive_completed, do: TaskServer.archieve_completed()
+
+  def get_archived, do: TaskServer.get_archived()
+  
   def reset_all,do: TaskServer.reset_all()
+
 end
