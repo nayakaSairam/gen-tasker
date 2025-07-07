@@ -1,5 +1,5 @@
 defmodule TaskManager do
-  def start do
+  def start() do
     TaskServer.start_link([])
   end
   def add(task),do: TaskServer.add_task(task)
